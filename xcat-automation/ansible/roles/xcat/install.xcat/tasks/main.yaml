@@ -9,12 +9,6 @@
     mode: 0755 
     force: yes
 
-- name: Load variables based on the hostname of this server, or pick up a default 
-  include_vars: "{{ item }}"
-  with_first_found: 
-    - "{{ ansible_hostname }}.yaml"
-    - default.yaml
-
 - debug: 
     var: xcat_version 
 

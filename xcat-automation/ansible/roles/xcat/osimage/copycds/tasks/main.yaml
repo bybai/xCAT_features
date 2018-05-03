@@ -26,7 +26,7 @@
 
 - name: "[copycds] get the osimage names into variables ..."
   include_role:
-    name: ansible/roles/xcat/osimage.list
+    name: ansible/roles/xcat/osimage/osimage.list
 
 - name: "[copycds] creating custom diskful osimage {{ custom_diskful_osimage_name }} ..." 
   import_tasks: create_custom_diskful_osimage.yaml 
