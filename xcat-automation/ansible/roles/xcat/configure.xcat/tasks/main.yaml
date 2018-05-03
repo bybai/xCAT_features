@@ -1,0 +1,16 @@
+---
+# This playbook will configure xCAT tables 
+
+- name: Creating directory /tmp/xcat-inventory/templates ...
+  file:
+    state: directory
+    path: "/tmp/xcat-inventory/templates"
+
+- name: "download xcat-inventory template"
+  copy: src=../../../../../{{ xcat_inventory_template }} dest=/tmp/xcat-inventory/templates remote_src=false 
+
+
+- name: "xcat-inventory configure xCAT table..."
+  command: "xcat-inventory import -f /tmp/xcat-inventory/{{ xcat_inventory_template }}"
+
+

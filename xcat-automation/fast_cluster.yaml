@@ -1,0 +1,15 @@
+---
+- hosts: management_nodes
+  remote_user: root
+
+  vars:
+     go_xcat_download_dest: "/tmp"
+     go_xcat_download_url: "https://raw.githubusercontent.com/xcat2/xcat-core/master/xCAT-server/share/xcat/tools/go-xcat"
+     xcat_inventory_url: "https://xcat.org/files/xcat/xcat-dep/2.x_Linux/beta/xcat-inventory/xcat-inventory-0.1.2-snap201804040002.noarch.rpm"
+     xcat_inventory_temp_dest: "/tmp/xcat-inventory"
+     xcat_inventory_package: "xcat-inventory-0.1.2-snap201804040002.noarch.rpm"
+     xcat_inventory_template: "templates/flat_kvm_cluster_template.yaml"
+
+  roles:
+    - { role: 'ansible/roles/xcat/install.xcat' }
+    - { role: 'ansible/roles/xcat/configure.xcat' }

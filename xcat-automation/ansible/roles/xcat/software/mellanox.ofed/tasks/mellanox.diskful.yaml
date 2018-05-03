@@ -1,0 +1,38 @@
+---
+
+- copy:
+    src: "{{ xcat_mellanox_installer_src }}"
+    dest: "{{ xcat_custom_mlnx_installer }}"
+    mode: 0755
+    remote_src: yes 
+
+- name: "[mellanox.diskful.yaml] modify the osimage: '{{ custom_diskful_osimage_name }}', user_comment ..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} -p usercomment='mellanox'"
+
+
+- include_vars:
+    file: "vars/{{ target_os }}.yaml"
+
+
+- debug: 
+    var: xcat_mellanox_pkglist
+
+
+- name: "[mellanox.diskful.yaml] get the source pkglist file ..."
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i pkglist -c | cut -d: -f2 | cut -d= -f2"
+  register: pkglist_source_file
+
+- debug: 
+     var: pkglist_source_file 
+
+- name: "[mellanox.diskful.yaml] add the mellanox pkglist to the pkglist file "
+  command: "echo '$INCLUDE:{{ xcat_mellanox_pkglist }}#' >> {{ pkglist_source_file.stdout }}"
+
+- debug: 
+    var: xcat_mellanox_installer_script_name
+
+- name: "[mellanox.diskful.yaml] modify the osimage: '{{ custom_diskful_osimage_name }}', postscripts ..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} -p postscripts='{{ xcat_mellanox_installer_script_name }} -p {{ mellanox_iso_file }} -m --add-kernel-support -end-'"
+
+
+

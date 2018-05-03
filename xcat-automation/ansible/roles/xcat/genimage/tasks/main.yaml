@@ -1,0 +1,52 @@
+---
+# copycds
+
+- include_vars:
+    file: "vars/{{ ansible_hostname }}.yaml"
+  ignore_errors: yes
+
+- name: get the osimage names into variables
+  include_role:
+    name: xcat/osimage.list
+  when: require_cuda == true
+
+- name: "[genimage.yaml] create the tmpdir if it does not exist ..."
+  file:
+    path: "{{ xcat_ansible_tmpdir }}"
+    state: directory
+
+- copy:
+    src: create_yum_localrepo.sh
+    dest: "{{ xcat_ansible_tmpdir }}"
+    mode: 0755
+
+
+#
+# genimage and packimage 
+#
+- name: "[genimage.yaml] genimage ..."
+  command: "genimage {{ custom_diskless_osimage_name }}"
+  when: run_genimage == true
+
+- name: "[genimage.yaml] get the management name for the compute network ..."
+  shell: "lsdef -t network -o {{ xcat_compute_network_name }} -i mgtifname -c | cut -d: -f2 | cut -d= -f2"
+  when: xcat_compute_network_name is defined
+  register: xcat_compute_mgmt_ifname
+
+- debug: 
+     var: xcat_compute_mgmt_ifname
+  when: xcat_compute_mgmt_ifname is defined 
+
+# this is not working right now, hard code
+#- debug: 
+#     var: hostvars[inventory_hostname]['ansible_{{ xcat_compute_mgmt_ifname.stdout }}'].ipv4.address
+
+# append packages to the package list 
+- name: "[genimage.yaml] create a local repo so yum will work ..."
+  command: "{{ xcat_ansible_tmpdir }}/create_yum_localrepo.sh {{ custom_diskless_osimage_name }} {{ xcat_compute_ip_address }}"
+  when: (run_create_local_repo == true or run_genimage == true) and xcat_compute_ip_address is defined
+
+
+- name: "[genimage.yaml] packimage ..."
+  command: "packimage {{ custom_diskless_osimage_name }}"
+  when: run_packimage == true

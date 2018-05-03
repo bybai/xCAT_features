@@ -1,0 +1,82 @@
+---
+# Tasks file to configure the cuda repo 
+
+# Extract the cuda repo to somewhere on xCAT 
+
+- name: "[cuda.createrepo.yaml] mount the software repository..."
+  include_role:
+    name: common/nfs.mount
+
+- name: "[cuda.createrepo.yaml] Check that {{ cuda_iso_location }} exists... "
+  stat: 
+    path: "{{ cuda_iso_location }}"
+  register: cuda_iso_stat_result
+
+- fail:
+    msg: "Could not find {{ cuda_iso_location }} on this node."
+  when: cuda_iso_stat_result.stat.exists == False
+
+- name: "[cuda.createrepo.yaml] Create {{ xcat_cuda_tmpdir }} to copy off the cuda repo" 
+  file:
+    path: "{{ xcat_cuda_tmpdir }}"
+    state: directory
+
+- copy:
+    src: rpm2cpio_script
+    dest: "{{ xcat_cuda_tmpdir }}"
+    mode: 0755
+
+- name: Copy the contents of the CUDA repo to the temp directory
+  command: "./rpm2cpio_script {{ cuda_iso_location }}"
+  args:
+    chdir: "{{ xcat_cuda_tmpdir }}"
+
+# Target path should be /install/cuda/<version>/<arch>
+#
+# i.e: /install/cuda/9.0/ppc64le
+
+# Delete and re-create the directory
+- name: "[cuda.createrepo.yaml] Target repo is here: {{ xcat_cuda_fullpath }}.. deleting, if exists"
+  file:
+     state: absent
+     path: "{{ xcat_cuda_fullpath }}"
+
+- name: "[cuda.createrepo.yaml] Creating directory: {{ xcat_cuda_fullpath_cudacore }}..."
+  file:
+     state: directory
+     path: "{{ xcat_cuda_fullpath_cudacore }}"
+
+- name: "[cuda.createrepo.yaml] Creating directory: {{ xcat_cuda_fullpath_cudadeps }}..."
+  file:
+    state: directory
+    path: "{{ xcat_cuda_fullpath_cudadeps }}"
+
+- name: "[cuda.createrepo.yaml] Copy files within target host ..."
+  shell: rsync {{ xcat_cuda_tmpdir }}/var/cuda-repo*/* {{ xcat_cuda_fullpath_cudacore }}
+  check_mode: no
+
+- name: "[cuda.createrepo.yaml] Getting the dkms package from {{ cuda_dkms_url }}..."
+  get_url:
+    url: "{{ cuda_dkms_url }}"
+    dest: "{{ xcat_cuda_fullpath_cudadeps }}"
+
+- name: "[cuda.createrepo.yaml] Install package createrepo ..."
+  yum:
+    name: createrepo
+    state: present
+
+- name: "[cuda.createrepo.yaml] Running createrepo on {{ xcat_cuda_fullpath_cudacore }} ..." 
+  command: "createrepo {{ xcat_cuda_fullpath_cudacore }}"
+
+- name: "[cuda.createrepo.yaml] Running createrepo on {{ xcat_cuda_fullpath_cudadeps }} ..."
+  command: "createrepo {{ xcat_cuda_fullpath_cudadeps }}"
+
+- name: "[cuda.createrepo.yaml] Clean up the temporary directory {{ xcat_cuda_tmpdir }} ..." 
+  file: 
+     state: absent
+     path: "{{ xcat_cuda_tmpdir }}"
+
+- name: "[cuda.createrepo.yaml] un-mount the software repository ..."
+  include_role:
+    name: common/nfs.umount
+

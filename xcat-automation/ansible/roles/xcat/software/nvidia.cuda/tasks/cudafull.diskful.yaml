@@ -1,0 +1,11 @@
+---
+
+- name: "[cuda.diskful.yaml] modify the osimage: '{{ custom_diskful_osimage_name }}', user_comment ..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} -p usercomment='cudafull'"
+
+- name: "[cuda.diskful.yaml] modify the osimage: '{{ custom_diskful_osimage_name }}', pkgdir..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} -p pkgdir='{{ xcat_cuda_fullpath_cudacore }},{{ xcat_cuda_fullpath_cudadeps }}'"
+
+- name: "[cuda.diskful.yaml] modify the osimage: '{{ custom_diskful_osimage_name }}', pkglist..."
+  shell: "cat {{ xcat_cuda_rhels7_sample_pkglist }} | sed '/pkglist/d' >> {{ xcat_custom_diskful_pkglist }}"
+

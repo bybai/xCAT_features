@@ -1,0 +1,39 @@
+---
+# This playbook will install xCAT 
+
+- name: download go-xcat installer
+  get_url:
+#    url: https://raw.githubusercontent.com/xcat2/xcat-core/master/xCAT-server/share/xcat/tools/go-xcat 
+    url: "{{ go_xcat_download_url }}"
+    dest: "{{ go_xcat_download_dest }}/go-xcat"
+    mode: 0755 
+    force: yes
+
+- name: Load variables based on the hostname of this server, or pick up a default 
+  include_vars: "{{ item }}"
+  with_first_found: 
+    - "{{ ansible_hostname }}.yaml"
+    - default.yaml
+
+- debug: 
+    var: xcat_version 
+
+- name: Install xCAT 
+  command: "{{ go_xcat_download_dest }}/go-xcat -y --xcat-version {{ xcat_version }} install"
+
+- name: Creating directory "{{ xcat_inventory_temp_dest }}" ...
+  file:
+    state: directory
+    path: "{{ xcat_inventory_temp_dest }}"
+
+- name: Get xcat-inventory package
+  get_url:
+    url: "{{ xcat_inventory_url }}"
+    dest: "{{ xcat_inventory_temp_dest }}"
+    mode: 0755
+    force: yes
+
+- name: Install xcat-inventory package
+  yum:
+    name: "{{ xcat_inventory_temp_dest }}/{{ xcat_inventory_package }}"
+    state: present

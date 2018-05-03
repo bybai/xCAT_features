@@ -1,0 +1,51 @@
+---
+
+
+- name: "[cuda.diskless.yaml] get the default template pkglist full path..." 
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i pkglist -c | cut -d: -f2 | cut -d= -f2"
+  register: cudafull_diskless_pkglist
+
+- name: "[cuda.diskless.yaml] get the default template pkglist filename..."
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i pkglist -c  | cut -d= -f2 | awk -F '/' '{print $NF}'"
+  register: cudafull_diskless_pkglist_filename
+
+- name: "[cuda.diskless.yaml] modify the osimage: '{{ custom_diskless_osimage_name }}', user_comment ..."
+  command: "chdef -t osimage -o {{ custom_diskless_osimage_name }} -p usercomment='cudafull'"
+
+
+#
+# otherpkgdir
+#
+- name: "[cuda.diskless.yaml] create the directory: {{ xcat_custom_diskless_otherpkgdir }}..."
+  file:
+    path: "{{ xcat_custom_diskless_otherpkgdir }}"
+    state: directory
+
+- name: "[cuda.diskless.yaml] set the otherpkgdir value..."
+  command: "chdef -t osimage -o {{ custom_diskless_osimage_name }} otherpkgdir={{ xcat_custom_diskless_otherpkgdir }}"
+
+- name: "[cuda.diskless.yaml] create a symlink... "
+  file: 
+    dest: "{{ xcat_custom_diskless_otherpkgdir }}/{{ cuda_version_str }}"
+    src: "{{ xcat_cuda_version }}" 
+    state: link
+
+#
+# rootimgdir 
+#
+- name: "[cuda.diskless.yaml] change the rootimgdir to {{ xcat_custom_diskless_rootimg }}..."
+  command: "chdef -t osimage {{ custom_diskless_osimage_name }} rootimgdir={{ xcat_custom_diskless_rootimg }}"
+
+#
+# otherpkglist 
+#
+
+- name: "[cuda.diskless.yaml] adding cuda-dep and cuda-core to otherpkglist..."
+  shell: |
+     echo '{{ cuda_version_str }}/{{ cuda_iso_arch }}/cuda-deps/dkms
+          {{ cuda_version_str }}/{{ cuda_iso_arch }}/cuda-core/cuda' > "{{ xcat_custom_diskless_otherpkglist }}"
+
+- name: "[cuda.diskless.yaml] change the otherpkglist to {{ xcat_custom_diskless_otherpkglist }}..."
+  command: "chdef -t osimage {{ custom_diskless_osimage_name }} otherpkglist={{ xcat_custom_diskless_otherpkglist }}"
+
+

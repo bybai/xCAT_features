@@ -1,0 +1,4 @@
+---
+
+xcat_compute_network_name: 172_20_0_0-255_255_0_0
+xcat_compute_ip_address: 172.20.253.31

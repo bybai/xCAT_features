@@ -1,0 +1,61 @@
+---
+
+- name: "[create_custom_diskless_osimage.yaml] create an osimage '{{ custom_diskless_osimage_name }}' based on the template..."
+  command: mkdef -t osimage -o "{{ custom_diskless_osimage_name }}" --template {{ dyn_diskless_compute_name.stdout }} -f
+
+- name: "[create_custom_diskless_osimage.yaml] create a custom otherpkgdir ..."
+  file:
+    path: "{{ xcat_custom_diskless_otherpkgdir }}"
+    state: directory
+ 
+- name: "[create_custom_diskless_osimage.yaml] change the otherpkgdir value ..."
+  command: "chdef -t osimage -o {{ custom_diskless_osimage_name }} otherpkgdir={{ xcat_custom_diskless_otherpkgdir }}"
+
+#
+# package lists 
+#
+- name: "[create_custom_diskless_osimage.yaml] get the source pkglist file ..."
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i pkglist -c | cut -d: -f2 | cut -d= -f2"
+  register: pkglist_source_file
+
+- name: "[create_custom_diskless_osimage.yaml] copy the pkglist file ..."
+  command: "cp {{ pkglist_source_file.stdout }} {{ xcat_custom_diskless_pkglist }}"
+
+- name: "[create_custom_diskless_osimage.yaml] change the pkglist value ..."
+  command: "chdef -t osimage -o {{ custom_diskless_osimage_name }} pkglist={{ xcat_custom_diskless_pkglist }}"
+
+# append packages to the package list 
+- name: "[create_custom_diskless_osimage.yaml] append to the pkglist file ..."
+  command: "{{ xcat_ansible_tmpdir }}/append_pkglist.sh {{ custom_diskless_osimage_name }} '{{ append_pkglist_packages }}'"
+
+
+- name: "[create_custom_diskless_osimage.yaml] get the source postinstall file ..."
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i postinstall -c | cut -d: -f2 | cut -d= -f2"
+  register: postinstall_source_file
+
+- name: "[create_custom_diskless_osimage.yaml] copy the postinstall file ..."
+  command: "cp {{ postinstall_source_file.stdout }} {{ xcat_custom_diskless_postinstall }}"
+
+- name: "[create_custom_diskless_osimage.yaml] change the postinstall value ..."
+  command: "chdef -t osimage -o {{ custom_diskless_osimage_name }} postinstall={{ xcat_custom_diskless_postinstall }}"
+
+#
+# rootimgdir
+#
+- name: "[create_custom_diskless_osimage.yaml] create a custom rootimgdir ..."
+  file:
+    path: "{{ xcat_custom_diskless_dir }}/rootimgdir"
+    state: directory
+
+- name: "[create_custom_diskless_osimage.yaml] change the rootimgdir value ... "
+  command: "chdef -t osimage {{ custom_diskless_osimage_name }} rootimgdir={{ xcat_custom_diskless_dir }}/rootimgdir"
+
+#
+# display 
+#
+- name: "[create_custom_diskless_osimage.yaml] get the osimage to display ..."
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }}"
+  register: tmp_diskless_osimage_list
+
+- debug: 
+    var: tmp_diskless_osimage_list.stdout_lines

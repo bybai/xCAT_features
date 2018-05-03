@@ -1,0 +1,15 @@
+---
+# This mounts the GPFS/NFS mount location
+
+- name: "Creating directory: {{ nfs_target_path }} ..."
+  file:
+     state: directory
+     path: "{{ nfs_target_path }}"
+
+- name: "Mounting {{ nfs_source_path }} to {{ nfs_target_path }}"
+  mount: 
+    path: "{{ nfs_target_path }}"
+    src:  "{{ nfs_server }}:{{ nfs_source_path }}"
+    fstype: nfs
+    state: mounted 
+  when: (nfs_server is defined) and (nfs_source_path is defined) and (nfs_target_path is defined)

@@ -1,0 +1,38 @@
+---
+
+
+- name: "[mellanox.diskless.yaml] get the default template pkglist full path..." 
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i pkglist -c | cut -d: -f2 | cut -d= -f2"
+  register: mellanox_diskless_pkglist
+
+- name: "[mellanox.diskless.yaml] get the default template pkglist filename..."
+  shell: "lsdef -t osimage -o {{ custom_diskless_osimage_name }} -i pkglist -c  | cut -d= -f2 | awk -F '/' '{print $NF}'"
+  register: mellanox_diskless_pkglist_filename
+
+- name: "[mellanox.diskless.yaml] modify the osimage: '{{ custom_diskless_osimage_name }}', user_comment ..."
+  command: "chdef -t osimage -o {{ custom_diskless_osimage_name }} -p usercomment='mellanox'"
+
+# Steps taking from: 
+# http://xcat-docs.readthedocs.io/en/stable/advanced/networks/infiniband/mlnxofed_ib_install_v2_diskless.html
+#
+# pkglist
+#
+- name: "[mellanox.diskless.yaml] adding IB default pkglist to custom pkglist ..."
+  shell: |
+     echo '#INCLUDE:/opt/xcat/share/xcat/ib/netboot/rh/ib.rhels7.ppc64le.pkglist#' >> {{ xcat_custom_diskless_pkglist }}
+
+#
+# postinstall
+#
+
+- name: "[mellanox.diskless.yaml] remove any existing mellanox install script entry ..." 
+  lineinfile: 
+     dest: "{{ xcat_custom_diskless_postinstall }}"
+     regexp: '.*genimage'
+     line: ''
+  become: true
+
+- name: "[mellanox.diskless.yaml] adding mlnxofed_ib_install script to the postinstall file ..." 
+  shell: |
+     echo '{{ xcat_custom_mlnx_installer }} -p {{ mellanox_iso_file }} -m --without-32bit --without-fw-update --force --add-kernel-support -end- -i $1 -n genimage' >> {{ xcat_custom_diskless_postinstall }}
+

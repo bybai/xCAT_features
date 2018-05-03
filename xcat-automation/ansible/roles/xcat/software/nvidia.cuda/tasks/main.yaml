@@ -1,0 +1,35 @@
+---
+# This helps to install CUDA against an osimage 
+
+- name: get the osimage names into variables 
+  include_role:
+    name: xcat/osimage.list
+  when: require_cuda == true
+
+#
+# The following task will create a cuda repo from the rpm repo file 
+#
+- name: "[main.yaml] creating cuda repo..."
+  import_tasks: cuda.createrepo.yaml
+  when: require_cuda == true and do_create_cuda_repo == true
+
+#
+# The following task will create a cudafull diskful osimage 
+#
+
+- debug: 
+    var: custom_diskful_osimage_name
+
+- name: "[main.yaml] creating cudafull diskful osimage..."
+  import_tasks: cudafull.diskful.yaml
+  when: require_cuda == true and not custom_diskful_osimage_name == ""
+
+#
+# The following task will create a cudafull diskless osimage 
+#
+- debug: 
+    var: custom_diskless_osimage_name
+
+- name: "[main.yaml] creating cudafull diskless osimage..."
+  import_tasks: cudafull.diskless.yaml
+  when: require_cuda == true and not custom_diskless_osimage_name == ""

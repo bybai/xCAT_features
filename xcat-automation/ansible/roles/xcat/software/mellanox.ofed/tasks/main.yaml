@@ -1,0 +1,34 @@
+---
+# This helps to configure an xCAT osimage to install Mellanox OFED during provisioning
+
+- name: get the osimage names into variables
+  include_role:
+    name: xcat/osimage.list
+  when: require_mellanox_ofed == true
+
+#
+# The following task will modify the diskful image for mellanox
+#
+
+- debug:
+    var: custom_diskful_osimage_name
+
+- name: "[main.yaml] copying the mellanox iso file to the {{ xcat_custom_diskful_dir }} ..."
+  import_tasks: mellanox.copyiso.yaml
+  when: require_mellanox_ofed == true and not custom_diskful_osimage_name == ""
+
+- name: "[main.yaml] modifying {{ custom_diskful_osimage_name }} for mellanox install ..."
+  import_tasks: mellanox.diskful.yaml
+  when: require_mellanox_ofed == true and not custom_diskful_osimage_name == ""
+
+
+#
+# The following task will modify the diskless image for mellanox
+#
+- debug:
+    var: custom_diskless_osimage_name
+
+- name: "[main.yaml] modifying {{ custom_diskless_osimage_name }} for mellanox install ..." 
+  import_tasks: mellanox.diskless.yaml
+  when: require_mellanox_ofed == true and not custom_diskless_osimage_name == ""
+

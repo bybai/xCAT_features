@@ -1,0 +1,10 @@
+---
+# This un-mounts the GPFS/NFS mount location
+
+- name: "Unmounting NFS to {{ nfs_target_path }}"
+  mount:
+    path: "{{ nfs_target_path }}"
+    src:  "{{ nfs_server }}:{{ nfs_source_path }}"
+    fstype: nfs
+    state: absent 
+  when: (nfs_server is defined) and (nfs_source_path is defined) and (nfs_target_path is defined)

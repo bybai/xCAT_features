@@ -1,0 +1,46 @@
+---
+
+- name: "[create_custom_diskful_osimage.yaml] create an osimage '{{ custom_diskful_osimage_name }}' based on the template..."
+  command: "mkdef -t osimage -o {{ custom_diskful_osimage_name }} --template {{ dyn_diskful_compute_name.stdout }} -f"
+
+- name: "[create_custom_diskful_osimage.yaml] create a custom otherpkgdir ..."
+  file:
+    path: "{{ xcat_custom_diskful_otherpkgdir }}"
+    state: directory
+ 
+- name: "[create_custom_diskful_osimage.yaml] change the otherpkgdir value ..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} otherpkgdir={{ xcat_custom_diskful_otherpkgdir }}"
+
+#
+# pkglist stuff
+#
+- name: "[create_custom_diskful_osimage.yaml] get the source pkglist file ..."
+  shell: "lsdef -t osimage -o {{ custom_diskful_osimage_name }} -i pkglist -c | cut -d: -f2 | cut -d= -f2"
+  register: pkglist_source_file
+
+- name: "[create_custom_diskful_osimage.yaml] copy the pkglist file ..."
+  command: "cp {{ pkglist_source_file.stdout }} {{ xcat_custom_diskful_pkglist }}"
+
+- name: "[create_custom_diskful_osimage.yaml] change the pkglist value ..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} pkglist={{ xcat_custom_diskful_pkglist }}" 
+
+# append packages to the package list 
+- name: "[create_custom_diskful_osimage.yaml] append to the pkglist file ..."
+  command: "{{ xcat_ansible_tmpdir }}/append_pkglist.sh {{ custom_diskful_osimage_name }} '{{ append_pkglist_packages }}'"
+
+- name: "[create_custom_diskful_osimage.yaml] get the source template file ..."
+  shell: "lsdef -t osimage -o {{ custom_diskful_osimage_name }} -i template -c | cut -d: -f2 | cut -d= -f2"
+  register: template_source_file
+
+- name: "[create_custom_diskful_osimage.yaml] copy the template file ..."
+  command: "cp {{ template_source_file.stdout }} {{ xcat_custom_diskful_dir }}/custom-{{ copycds_name }}.tmpl"
+
+- name: "[create_custom_diskful_osimage.yaml] change the template value ..."
+  command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} template={{ xcat_custom_diskful_dir }}/custom-{{ copycds_name }}.tmpl"
+
+- name: "[create_custom_diskful_osimage.yaml] get the osimage to display ..."
+  shell: "lsdef -t osimage -o {{ custom_diskful_osimage_name }}"
+  register: tmp_diskful_osimage_list
+
+- debug: 
+    var: tmp_diskful_osimage_list.stdout_lines

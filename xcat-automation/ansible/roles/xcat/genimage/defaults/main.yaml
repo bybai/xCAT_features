@@ -1,0 +1,6 @@
+---
+run_genimage: true
+run_packimage: true
+run_create_local_repo: true
+
+

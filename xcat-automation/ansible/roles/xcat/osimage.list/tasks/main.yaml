@@ -1,0 +1,43 @@
+---
+# osimage.list 
+
+#
+# diskful
+#
+- name: "[osimage.list] set variables for diskful install image"
+  shell: echo $(lsdef -t osimage | grep {{ copycds_name }} | grep 'install-compute ' | grep -v '{{ ansible_tag }}' | cut -d' ' -f1)
+  register: dyn_diskful_compute_name
+
+- fail:
+     msg: "Could not find any osimages defined with name {{ copycds_name }} for diskful compute node (name={{ dyn_diskful_compute_name.stdout }}). Check your osimage table" 
+  when: dyn_diskful_compute_name.stdout == ""
+
+- name: "[osimage.list] set variables for custom diskful install image"
+  shell: echo $(lsdef -t osimage | grep {{ copycds_name }} | grep '{{ ansible_tag }}-install-compute' | cut -d' ' -f1)
+  register: dyn_custom_diskful_compute_name
+
+#
+# diskless
+#
+- name: "[osimage.list] set variables for diskless install image"
+  shell: echo $(lsdef -t osimage | grep {{ copycds_name }} | grep 'netboot-compute ' | grep -v '{{ ansible_tag }}' | cut -d' ' -f1)
+  register: dyn_diskless_compute_name
+
+- fail:
+     msg: "Could not find any osimages defined with name {{ copycds_name }} for diskless compute node (name={{ dyn_diskless_compute_name.stdout }}). Check your osimage table"
+  when: dyn_diskless_compute_name.stdout == ""
+
+- name: "[osimage.list] set variables for custom diskless install image"
+  shell: echo $(lsdef -t osimage | grep {{ copycds_name }} | grep '{{ ansible_tag }}-netboot-compute' | cut -d' ' -f1)
+  register: dyn_custom_diskless_compute_name
+
+#
+# service 
+#
+- name: "[osimage.list] set variables for diskful service image"
+  shell: echo $(lsdef -t osimage | grep {{ copycds_name }} | grep 'install-service ' | grep -v '{{ ansible_tag }}' | cut -d' ' -f1)
+  register: dyn_diskful_service_name
+
+- fail:
+     msg: "Could not find any osimages defined with name {{ copycds_name }} for diskful service node (name={{ dyn_diskful_service_name.stdout }}). Check your osimage table"
+  when: dyn_diskful_service_name.stdout == ""

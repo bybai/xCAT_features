@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ -z ${1} ]]; then 
+   echo "Error! Must provide the path of the CUDA repo to copy out"
+   exit 1
+fi 
+
+RPM_NAME=${1}
+
+rpm2cpio $RPM_NAME | cpio -i -d
+

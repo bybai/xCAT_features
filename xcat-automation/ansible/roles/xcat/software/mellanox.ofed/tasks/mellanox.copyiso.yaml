@@ -1,0 +1,28 @@
+---
+# Tasks file to configure the cuda repo 
+
+# Extract the cuda repo to somewhere on xCAT 
+
+- name: "[mellanox.copyiso] mount the software repository..."
+  include_role:
+    name: common/nfs.mount
+
+- name: "Check that {{ mellanox_iso_location }} exists... "
+  stat: 
+    path: "{{ mellanox_iso_location }}"
+  register: mellanox_iso_stat_result
+
+- fail:
+    msg: "Could not find {{ mellanox_iso_location }} on this node."
+  when: mellanox_iso_stat_result.stat.exists == False
+
+- name: "[mellanox.copyiso.yaml] - copy the iso file to {{ xcat_custom_diskful_dir }} ..."
+  command: "cp {{ mellanox_iso_location }}/{{ mellanox_iso_file_name }} {{ xcat_custom_diskful_dir }} "
+
+- name: "[mellanox.copyiso.yaml] - copy the iso file to {{ xcat_custom_diskless_dir }} ..."
+  command: "cp {{ mellanox_iso_location }}/{{ mellanox_iso_file_name }} {{ xcat_custom_diskless_dir }} "
+
+- name: "[mellanox.copyiso] un-mount the software repository..."
+  include_role:
+    name: common/nfs.umount
+
