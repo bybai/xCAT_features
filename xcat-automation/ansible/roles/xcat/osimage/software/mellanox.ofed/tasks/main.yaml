@@ -3,7 +3,7 @@
 
 - name: get the osimage names into variables
   include_role:
-    name: xcat/osimage.list
+    name: ansible/roles/xcat/osimage/osimage.list
   when: require_mellanox_ofed == true
 
 #

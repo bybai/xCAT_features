@@ -5,7 +5,7 @@
 
 - name: "[cuda.createrepo.yaml] mount the software repository..."
   include_role:
-    name: common/nfs.mount
+    name: ansible/roles/common/nfs.mount
 
 - name: "[cuda.createrepo.yaml] Check that {{ cuda_iso_location }} exists... "
   stat: 
@@ -78,5 +78,5 @@
 
 - name: "[cuda.createrepo.yaml] un-mount the software repository ..."
   include_role:
-    name: common/nfs.umount
+    name: ansible/roles/common/nfs.umount
 

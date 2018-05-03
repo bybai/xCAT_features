@@ -3,13 +3,88 @@
   remote_user: root
 
   vars:
-     go_xcat_download_dest: "/tmp"
-     go_xcat_download_url: "https://raw.githubusercontent.com/xcat2/xcat-core/master/xCAT-server/share/xcat/tools/go-xcat"
-     xcat_inventory_url: "https://xcat.org/files/xcat/xcat-dep/2.x_Linux/beta/xcat-inventory/xcat-inventory-0.1.2-snap201804040002.noarch.rpm"
-     xcat_inventory_temp_dest: "/tmp/xcat-inventory"
-     xcat_inventory_package: "xcat-inventory-0.1.2-snap201804040002.noarch.rpm"
-     xcat_inventory_template: "templates/flat_kvm_cluster_template.yaml"
+    xcat_version: devel
+    xcat_install_dir: "/install"
+    go_xcat_download_dest: "/tmp"
+    go_xcat_download_url: "https://raw.githubusercontent.com/xcat2/xcat-core/master/xCAT-server/share/xcat/tools/go-xcat"
+    xcat_inventory_url: "https://xcat.org/files/xcat/xcat-dep/2.x_Linux/beta/xcat-inventory/xcat-inventory-0.1.2-snap201804040002.noarch.rpm"
+    xcat_inventory_temp_dest: "/tmp/xcat-inventory"
+    xcat_inventory_package: "xcat-inventory-0.1.2-snap201804040002.noarch.rpm"
+    xcat_inventory_template: "templates/flat_kvm_cluster_template.yaml"
+#
+#copycds
+    nfs_server: 10.0.0.122
+    nfs_source_path: /gpfs/cnfs01/data/xcat
+    nfs_target_path: /mnt/xcat
+    require_copycds: yes
+    target_os: rhels7
+    iso_file_arch: ppc64le
+    copycds_name: rhels7.5-alt-rc2
+    iso_file_basedir: ALT-7.5-RC2
+    iso_file_name: RHEL-ALT-7.5-20180315.0-Server-ppc64le-dvd1.iso
+    iso_full_path: "{{ nfs_target_path }}/iso/pegas/{{ iso_file_basedir }}/{{ iso_file_name }}"
+#
+#cuda
+    require_cuda: yes
+    do_create_cuda_repo: yes
+    cuda_version: 9.2
+    cuda_iso_arch: ppc64le
+    cuda_iso_location: "{{ nfs_target_path }}/software/NVIDIA_CUDA/9.2/cuda-repo-rhel7-9-2-local-9.2.64-1.ppc64le.rpm"
+    cuda_dkms_url: http://mirror.pnl.gov/epel/7/ppc64le/Packages/d/dkms-2.5.0-2.20180306gitb1b9033.el7.noarch.rpm
+    xcat_cuda_dir: "{{ xcat_ansible_dir }}/cuda"
+    xcat_cuda_tmpdir: /tmp/xcat_cuda_tmp
+    cuda_version_str: "cuda-{{ cuda_version }}"
+    xcat_cuda_version: "{{ xcat_cuda_dir }}/{{ cuda_version_str }}"
+    xcat_cuda_fullpath: "{{ xcat_cuda_version }}/{{ cuda_iso_arch }}"
+    xcat_cuda_fullpath_cudacore: "{{ xcat_cuda_fullpath }}/cuda-core"
+    xcat_cuda_fullpath_cudadeps: "{{ xcat_cuda_fullpath }}/cuda-deps"
+    xcat_cuda_rhels7_sample_pkglist: "/opt/xcat/share/xcat/install/rh/cudafull.rhels7.ppc64le.pkglist"
+#
+#mellanox
+    require_mellanox_ofed: yes
+    mellanox_iso_file_name: MLNX_OFED_LINUX-4.3-1.0.1.1-rhel7.5alternate-ppc64le.iso
+    mellanox_iso_location: "{{ nfs_target_path }}/software/MLNX_OFED/rhels7.5-alt"
+    xcat_mellanox_pkglist: "/opt/xcat/share/xcat/ib/netboot/rh/ib.rhels7.ppc64le.pkglist"
+    xcat_mellanox_directory: "{{ xcat_ansible_dir }}/ansible/mellanox"
+    xcat_mellanox_installer_src: "/opt/xcat/share/xcat/ib/scripts/Mellanox/mlnxofed_ib_install.v2"
+    xcat_mellanox_installer_script_name: "{{ copycds_name }}-custom-mlnxofed_ib_install"
+    xcat_postscripts_dir: "{{ xcat_install_dir }}/postscripts"
+    xcat_custom_mlnx_installer: "{{ xcat_postscripts_dir }}/{{ xcat_mellanox_installer_script_name }}"
+
+    mellanox_iso_file: "{{ xcat_custom_diskful_dir }}/{{ mellanox_iso_file_name }}"
+    xcat_ansible_tmpdir: "/tmp/xcat_ansible_tmp"
+    xcat_ansible_dir: "{{ xcat_install_dir }}/ansible"
+    xcat_custom_dir: "{{ xcat_ansible_dir }}/custom"
+
+    ansible_tag: ansible_custom
+    custom_diskful_osimage_name: "{{ copycds_name }}-{{ iso_file_arch }}-{{ ansible_tag }}-install-compute"
+    custom_diskless_osimage_name: "{{ copycds_name }}-{{ iso_file_arch }}-{{ ansible_tag }}-netboot-compute"
+    xcat_custom_diskful_dir: "{{ xcat_custom_dir }}/{{ custom_diskful_osimage_name }}"
+    xcat_custom_diskless_dir: "{{ xcat_custom_dir }}/{{ custom_diskless_osimage_name }}"
+
+#
+## pkglist
+##
+     append_pkglist_packages: "yum,pciutils,git,unzip,gcc*"
+     xcat_custom_diskful_pkglist: "{{ xcat_custom_diskful_dir }}/custom-{{ copycds_name }}.pkglist"
+     xcat_custom_diskless_pkglist: "{{ xcat_custom_diskless_dir }}/custom-{{ copycds_name }}.pkglist"
+#
+## postinstall
+##
+     xcat_custom_diskful_postinstall: "{{ xcat_custom_diskful_dir }}/custom-{{ copycds_name }}.postinstall"
+     xcat_custom_diskless_postinstall: "{{ xcat_custom_diskless_dir }}/custom-{{ copycds_name }}.postinstall"
+#
+# otherpkgdir
+#
+     xcat_custom_diskful_otherpkgdir: "{{ xcat_custom_diskful_dir }}/otherpkgdir"
+     xcat_custom_diskless_otherpkgdir: "{{ xcat_custom_diskless_dir }}/otherpkgdir"
+     xcat_custom_diskless_otherpkglist: "{{ xcat_custom_diskless_dir }}/custom-{{ copycds_name }}.otherpkglist.pkglist"
+     xcat_custom_diskless_rootimg: "{{ xcat_custom_diskless_dir }}/rootimgdir"
+
 
   roles:
     - { role: 'ansible/roles/xcat/install.xcat' }
     - { role: 'ansible/roles/xcat/configure.xcat' }
+    - { role: 'ansible/roles/xcat/osimage/copycds', tags: 'copycds' }
+    - { role: 'ansible/roles/xcat/osimage/software/nvidia.cuda', tags: 'cuda' }
+    - { role: 'ansible/roles/xcat/osimage/software/mellanox.ofed', tags: 'mellanox' }

@@ -10,10 +10,6 @@
   command: "chdef -t osimage -o {{ custom_diskful_osimage_name }} -p usercomment='mellanox'"
 
 
-- include_vars:
-    file: "vars/{{ target_os }}.yaml"
-
-
 - debug: 
     var: xcat_mellanox_pkglist
 
