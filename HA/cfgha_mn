@@ -1,0 +1,132 @@
+#!/bin/bash
+#USAGE:cfgha_mn -l shared_data_path -i VIP -g git_repo_for_xcat_inventory_data
+
+str_os_type=`uname -s`
+if [ x"$str_os_type" = "xLinux" ];then
+    str_dir_name="${0%/*}"
+    . $str_dir_name/xcatlib.sh
+else
+    log_error "Does NOT support non-Linux Operating System."
+    exit 1
+fi
+
+# get specific NIC for VIP
+function get_nic(){
+    pysical_ip=$IPADDR
+    primary_nic=`ip route | grep $pysical_ip | awk -F '[ \t*]' '{print $3}'|head -1`
+    if [ -n $primary_nic ]; then
+        echo $primary_nic:0
+    fi
+}
+
+function get_mask(){
+   pysical_ip=$IPADDR
+   prefix=$(ip route |grep $pysical_ip|awk '{print $1}'|cut -f 2 -d'/')
+   netmask=$(v4prefix2mask $prefix)
+   if [ -n $netmask ]; then
+       echo $netmask
+   else
+       echo "255.255.255.0"
+   fi
+}
+
+pysical_hostname=`hostname -s`
+
+#create vip hostname
+function get_vip_hostname(){
+    vip=$1
+    vip_hostname=$(getent hosts $vip | awk -F ' ' '{print $2}' | awk -F'.' '{print $1}'| uniq)
+    if [ -z $vip_hostname ]; then
+        vip_hostname=${pysical_hostname}-ha
+    fi
+    echo $vip_hostname
+}
+
+return_code=0
+if [ $# -lt 4 ]; then
+    echo "USAGE:`basename $0` -l shared_data_path -i VIP"
+    exit 1
+fi
+while getopts "l:i:g:" opt; do
+  case $opt in
+    l)
+      SHARE_DATA=$OPTARG
+      echo "The shared data directory is $SHARE_DATA" 
+      ;;
+    i)
+      VIP=$OPTARG
+      echo "The VIP is $VIP"
+      ;; 
+    g)
+      URL=$OPTARG
+      echo "xcat-inventory git URL is $URL"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG"
+      return_code=1 
+      ;;
+  esac
+done
+VIP_NIC=$(get_nic)
+if [ -n $VIP_NIC ]; then
+    echo "VIP NIC is :" $VIP_NIC
+else
+    echo "Error: cannot get VIP NIC"
+    return_code=1
+fi
+NETMASK=$(get_mask) 
+if [ -n $NETMASK ]; then
+    echo "NETMASK is :" $NETMASK
+fi
+VIP_hostname=$(get_vip_hostname $VIP)
+if [ -n $VIP_hostname ]; then
+    echo "VIP hostname is :" $VIP_hostname
+else
+    echo "Error: cannot define VIP hostname"
+    return_code=1
+fi
+SHARE_DATA_DES=/xcat/HA/$pysical_hostname
+mkdir -p $SHARE_DATA_DES
+mount|grep -w $SHARE_DATA_DES
+if [ $? -ne 0 ]; then 
+    mount $SHARE_DATA $SHARE_DATA_DES
+    if [ $? -ne 0 ]; then
+        echo "mount $SHARE_DATA $SHARE_DATA_DES [failed]"
+        return_code=1
+    fi
+else
+    echo "$SHARE_DATA_DES is already mounted"
+fi
+
+if [ -n $URL ]; then
+    rm -rf /root/xcat-mn-data
+    git clone $URL /root/xcat-mn-data
+else
+    echo "There is no xcat-inventory data"
+fi
+
+if [ $return_code -eq 1 ]; then
+    echo "Process exit with above error"
+    exit $return_code
+else
+    echo "Start to configure HA NODE $VIP_hostname"
+    python xcatha.py -s -p /$SHARE_DATA_DES -v $VIP -i $VIP_NIC -n $VIP_hostname -m $NETMASK
+    if [ $? -eq 0 ]; then
+        echo "Start to activate $VIP_hostname"
+        python xcatha.py -a -p /$SHARE_DATA_DES -v $VIP -i $VIP_NIC -n $VIP_hostname -m $NETMASK
+        if [ $? -eq 0 ]; then
+             if [ -d /root/xcat-mn-data ]; then
+                 echo "use xcat-inventory to import Cluster data"
+                 xcat-inventory import -f /root/xcat-mn-data/cluster.json
+                 if [ $? -ne 0 ]; then
+                     $return_code=1
+                 fi
+             fi
+        else
+            $return_code=1
+        fi
+    else
+        $return_code=1
+    fi
+fi
+exit $return_code
